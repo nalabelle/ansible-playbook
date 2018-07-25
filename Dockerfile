@@ -1,39 +1,37 @@
 FROM gliderlabs/alpine:3.4
 
 RUN \
-  apk-install \
+  apk --update add \
+    sudo \
+    ca-certificates \
     curl \
     openssh-client \
+    openssl \
     python \
-    py-boto \
-    py-dateutil \
-    py-httplib2 \
-    py-jinja2 \
-    py-paramiko \
     py-pip \
-    py-setuptools \
-    py-yaml \
+    rsync \
     tar && \
-  pip install --upgrade pip python-keyczar && \
+  apk --update add --virtual build-dependencies \
+    build-base \
+    libffi-dev \
+    openssl-dev \
+    python-dev && \
+  pip install --upgrade \
+    ansible \
+    cffi \
+    pip \
+    && \
+  apk del build-dependencies && \
   rm -rf /var/cache/apk/*
 
 RUN mkdir /etc/ansible/ /ansible
 RUN echo "[local]" >> /etc/ansible/hosts && \
     echo "localhost" >> /etc/ansible/hosts
 
-RUN \
-  curl -fsSL https://releases.ansible.com/ansible/ansible-2.2.2.0.tar.gz -o ansible.tar.gz && \
-  tar -xzf ansible.tar.gz -C ansible --strip-components 1 && \
-  rm -fr ansible.tar.gz /ansible/docs /ansible/examples /ansible/packaging
-
 RUN mkdir -p /ansible/playbooks
 WORKDIR /ansible/playbooks
 
-ENV ANSIBLE_GATHERING smart
 ENV ANSIBLE_HOST_KEY_CHECKING false
-ENV ANSIBLE_RETRY_FILES_ENABLED false
-ENV ANSIBLE_ROLES_PATH /ansible/playbooks/roles
-ENV ANSIBLE_SSH_PIPELINING True
 ENV PATH /ansible/bin:$PATH
 ENV PYTHONPATH /ansible/lib
 
